@@ -1,0 +1,34 @@
+[package]
+name = "ferrata_updater_module"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+publish = false
+
+# A workspace of its own, so that cargo adopts no parent workspace. The staged sources under vendor/
+# (scripts/stage-updater.sh) keep the repository's and LEZ's layouts and their own workspaces.
+[workspace]
+members = ["calls"]
+exclude = ["vendor"]
+
+[lib]
+crate-type = ["staticlib"]
+
+# Cargo.lock is committed: the builder feeds it to buildRustPackage. It was seeded from lez/Cargo.lock
+# (the versions the updater and the harness are tested with) on the build box, and for the sequencer backend from
+# lez/updater/sequencer/Cargo.lock (the versions of LEZ's node-side crates the binary links).
+[dependencies]
+serde_json = "1"
+# Staged by the builder from the logos-rust-sdk revision its code generator comes from.
+logos-rust-sdk = { path = "../logos-rust-sdk-src" }
+ferrata-updater-calls = { path = "calls" }
+
+# LEZ's workspace patches keccak (logos-blockchain's sponges); its node-side crates, which the sequencer backend links
+# (calls/: ferrata-updater-sequencer), need that version. A patch applies from the root workspace only.
+[patch.crates-io]
+keccak = { git = "https://github.com/logos-blockchain/sponges", rev = "3a56e99771beedf04946eab21a4a62adc2951377" }
+
+# The in-process chain (the harness) enables LEZ's `test-utils`, which refuses a build without debug
+# assertions; the builder builds `--release`. The updater's tests run with them too (cargo test).
+[profile.release]
+debug-assertions = true

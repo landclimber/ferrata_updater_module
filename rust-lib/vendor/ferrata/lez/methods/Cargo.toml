@@ -1,0 +1,9 @@
+# A stand-in for lez/methods in ferrata_updater_module (modules/scripts/stage-updater.sh): the guests
+# risc0-build made for lez/methods, embedded under the same names, without the build script (the
+# module builder runs no RISC Zero toolchain).
+[package]
+name = "methods"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+publish = false

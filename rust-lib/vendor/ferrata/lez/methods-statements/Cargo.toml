@@ -1,0 +1,8 @@
+# A stand-in for lez/methods-statements in ferrata_updater_module (modules/scripts/stage-updater.sh): an optional
+# dependency of the harness behind a feature the module never enables; empty, without the build script.
+[package]
+name = "methods-statements"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+publish = false

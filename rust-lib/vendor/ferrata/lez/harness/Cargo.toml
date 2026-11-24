@@ -1,0 +1,89 @@
+[package]
+name = "harness"
+description = "Drives the Ferrata LEZ program through LEZ v0.4.0-rc1's state machine and fee settlement"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[dependencies]
+methods = { path = "../methods" }
+ferrata-lez-wire = { path = "../wire" }
+# The bridge program's wire types, and the bridge core (std: full trees with paths, key derivation).
+ferrata-lez-bridge-wire = { path = "../bridge-wire" }
+ferrata-bridge-core = { path = "../../bridge/crates/ferrata-bridge-core" }
+# The second consumer of the attestation (guests/holdings): its messages, state and acceptance check.
+ferrata-lez-holdings-wire = { path = "../holdings-wire" }
+ferrata-core = { path = "../../crates/ferrata-core", features = ["blst"] }
+# The reference Merkle-Patricia trie and the JSON-RPC readers of the core's test crate: the Stage 4
+# tests rebuild a block's receipts trie from `eth_getBlockReceipts` and read `eth_getProof`.
+ferrata-spectests = { path = "../../crates/ferrata-spectests" }
+serde_json = "1"
+# LEZ v0.4.0-rc1 by path (see wire/Cargo.toml). `test-utils` exposes the private-account test
+# helpers the Stage 2 and 3 tests need; it refuses to build without debug assertions.
+lee = { path = "../../../upstream/lez-v0.4.0-rc1/lee/state_machine", features = ["test-utils"] }
+lee_core = { path = "../../../upstream/lez-v0.4.0-rc1/lee/state_machine/core", features = ["host", "test_utils"] }
+fee_core = { path = "../../../upstream/lez-v0.4.0-rc1/lez/programs/fee/core" }
+system_accounts = { path = "../../../upstream/lez-v0.4.0-rc1/lez/system_accounts" }
+programs = { path = "../../../upstream/lez-v0.4.0-rc1/lez/programs", default-features = false, features = ["artifacts"] }
+# LEZ's `Script` for its `scripted` test program (an actor of another program in the tests).
+test_guest_core = { path = "../../../upstream/lez-v0.4.0-rc1/test_guest_core" }
+risc0-zkvm = { version = "=3.0.5", default-features = false, features = ["client"] }
+borsh = { version = "=1.6.1", features = ["derive"] }
+hex = "0.4"
+sha2 = "0.10"
+
+# EXPERIMENTAL, bench-only (tests/residue_experimental.rs): the program copy that checks a residue
+# witness instead of the final exponentiation, and the native witness computation. Used by that test only; optional
+# (a dev-dependency cannot be), behind the feature `residue-experimental`, so that no ordinary build
+# or test of this crate, or of what depends on it, builds the experimental guest.
+methods-residue-experimental = { path = "../methods-residue-experimental", optional = true }
+residue = { path = "../../bench/residue", optional = true }
+residue-agg = { path = "../../bench/residue-agg", optional = true }
+# The attestation program's second build (guests/program-class, not deployed): the reply with each
+# statement's nullifier-safety class (tests/history_hops.rs). Optional, behind the feature
+# `program-class`, so that no ordinary build or test of this crate builds the second guest.
+methods-program-class = { path = "../methods-program-class", optional = true }
+ferrata-lez-wire-class = { path = "../wire-class", optional = true }
+# The recorded-statement program and its reader (guests/statements, guests/statements-reader; RFP-021 soft
+# requirement 1, tests/statements.rs). The guests are optional, behind the feature `statements`, so that no ordinary
+# build builds them; the wire crate is not, so that the exit-code tables name its codes (tests/exit_codes.rs).
+methods-statements = { path = "../methods-statements", optional = true }
+ferrata-lez-statements-wire = { path = "../statements-wire" }
+# The rebate program (guests/rebate; RFP-021 soft requirement 5, tests/rebate.rs). The guest is optional, behind the
+# feature `rebate`; the wire crate is not, for the same reason.
+methods-rebate = { path = "../methods-rebate", optional = true }
+ferrata-lez-rebate-wire = { path = "../rebate-wire" }
+# The names program (guests/names; the test network's names, tests/names.rs). Both optional, behind the feature `names`.
+methods-names = { path = "../methods-names", optional = true }
+ferrata-lez-names-wire = { path = "../names-wire", optional = true }
+# The test network's messages programs (guests/msg, v1, live; guests/msg-v2; docs/design/messages.md; tests/messages*.rs).
+# The guests are optional, behind the feature `msg`; the wire crates (no LEZ dependency) are not.
+methods-msg = { path = "../methods-msg", optional = true }
+ferrata-lez-msg-wire = { path = "../msg-wire" }
+ferrata-lez-msg-v2-wire = { path = "../msg-v2-wire" }
+
+[dev-dependencies]
+# The checkpoint program's own block parser and message decoder, to check what it would collect
+# from the bridge program's transactions (tests/bridge_burn.rs).
+checkpoint-core = { path = "../../checkpoint/crates/checkpoint-core" }
+
+[features]
+# The calls whose LEZ API differs between the tags this crate builds against. The default is set
+# with the path dependencies by ../scripts/lez-select.sh (none: v0.4.0-rc1; `lez-rc2`: v0.4.0-rc2;
+# `lez-rc3`: v0.4.0-rc3, which has rc2's API changes too).
+default = [] # lez-select
+lez-rc2 = []
+lez-rc3 = ["lez-rc2"]
+# The experimental one-transaction update (tests/residue_experimental.rs, bench/RESIDUE.md).
+residue-experimental = ["dep:methods-residue-experimental", "dep:residue", "dep:residue-agg"]
+# The attestation program's second build at `CLASSED` (tests/history_hops.rs, docs/design/attestation.md §5.7).
+program-class = ["dep:methods-program-class", "dep:ferrata-lez-wire-class"]
+# The recorded-statement path (tests/statements.rs, docs/guides/recorded-statements.md).
+statements = ["dep:methods-statements"]
+# The operator rebate (tests/rebate.rs, docs/guides/operator-rebate.md).
+rebate = ["dep:methods-rebate"]
+# The test network's names program (tests/names.rs, names/README.md).
+names = ["dep:methods-names", "dep:ferrata-lez-names-wire"]
+# Encrypted wallet-to-wallet messages on the test network (tests/messages.rs, docs/design/messages.md).
+msg = ["dep:methods-msg"]

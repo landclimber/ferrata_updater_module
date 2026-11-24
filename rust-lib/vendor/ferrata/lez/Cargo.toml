@@ -1,0 +1,16 @@
+# Ferrata as a LEZ v0.4.0-rc1 program: wire types, the guests (built by methods/), and the host
+# harness that drives them through LEZ's state machine. Its own workspace, excluded from the
+# repository's root workspace like bench/. The guests under guests/ are workspaces of their own.
+[workspace]
+resolver = "2"
+members = ["wire", "bridge-wire", "holdings-wire", "methods", "harness", "updater", "advance", "methods-residue-experimental",
+           "wire-class", "methods-program-class", "statements-wire", "methods-statements", "rebate-wire", "methods-rebate",
+           "names-wire", "methods-names", "msg-wire", "methods-msg", "msg-v2-wire"]
+exclude = ["guests"]
+
+# BLS and the zkVM client are slow unoptimised; optimise dependencies even in test builds.
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.test]
+opt-level = 1
